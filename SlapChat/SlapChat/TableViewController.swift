@@ -2,66 +2,56 @@
 //  TableViewController.swift
 //  SlapChat
 //
-//  Created by Flatiron School on 7/18/16.
+//  Created by susan lovaglio on 7/16/16.
 //  Copyright © 2016 Flatiron School. All rights reserved.
 //
 
 import UIKit
+import CoreData
 
 class TableViewController: UITableViewController {
-
-    
-    var managedMessageObjects: [Message] = []
-    let store: DataStore = DataStore()
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        store.fetchData()
-        
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-        
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem()
-        
-        
-        
-    }
-    
-    override func viewWillAppear(animated: Bool) {
-        
-        super.viewWillAppear(true)
-        
-        store.fetchData()
-        tableView.reloadData()
-        
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-    
-    // MARK: - Table view data source
-    
-    override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
-        return 1
-    }
-    
-    override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
-        return store.messages.count
-    }
-    
-    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        
-        let cell = tableView.dequeueReusableCellWithIdentifier("basicCell", forIndexPath: indexPath)
-        
-        let eachMessage = store.messages[indexPath.row]
-        
-        cell.textLabel?.text = eachMessage.content
-        
-        return cell
-    }
+   
+   let dataStore = DataStore.sharedDataStore
+   var recipientSelected: Recipient?
+   var recipientMessages = [Message]()
+   
+   override func viewDidLoad() {
+      super.viewDidLoad()
+      
+      if let recipientSelected = recipientSelected {
+         recipientMessages = Array(recipientSelected.messages)
+      }
+   }
+   
+   override func viewDidAppear(animated: Bool) {
+      super.viewDidAppear(true)
+      if let recipientSelected = recipientSelected {
+         recipientMessages = Array(recipientSelected.messages)
+      }
+      tableView.reloadData()
+   }
+   
+   override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+      return recipientMessages.count
+   }
+   
+   override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+      let newCell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath)
+      
+      newCell.textLabel?.text = recipientMessages[indexPath.row].content
+      return newCell
+   }
+   
+   @IBAction func refreshTapped(sender: AnyObject) {
+      dataStore.fetchDataByEntity("Message", key: "createdAt")
+      tableView.reloadData()
+   }
+   
+   override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+      let destinationVC = segue.destinationViewController as? AddMessageViewController
+      
+      if let addMessageVC = destinationVC {
+         addMessageVC.recipientToAddTo = recipientSelected
+      }
+   }
 }
